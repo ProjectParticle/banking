@@ -9,64 +9,44 @@
 -- Github: https://github.com/keendev-team
 -------------------------------------------
 
-create or replace function <%- migration.schemaName %>.<%- databaseItemsPrefix %>get_balance (account char(8))
-    returns decimal
-    language plpgsql
-    AS $$
-
-    DECLARE
-        current_balance decimal;
-
-    BEGIN
-        SELECT balance into current_balance
-        FROM <%- migration.schemaName %>.<%- databaseItemsPrefix %>transaction
-        WHERE account_number = account
-        ORDER BY period DESC, timestamp DESC
-        LIMIT 1;
-
-        return COALESCE(current_balance, 0);
-    END
-
-    $$;
-
 create or replace function <%- migration.schemaName %>.<%- databaseItemsPrefix %>insert_transaction (
-    account char,
-    amount decimal,
-    code char default null,
-    datetime timestamp default null,
-    description varchar default null,
-    meta json default null)
+	account char,
+	amount decimal,
+	code char default null,
+	datetime timestamp default null,
+	description varchar default null,
+	meta jsonb default null)
 
-    returns <%- migration.schemaName %>.<%- databaseItemsPrefix %>transaction_result
-    language plpgsql
-    AS $$
+	returns <%- migration.schemaName %>.<%- databaseItemsPrefix %>transaction_result
+	language plpgsql
+	AS $$
 
-    DECLARE
-        current_period int;
-        transaction_code char(8);
-        account_balance decimal;
-        transaction_time timestamp;
+	DECLARE
+		current_period int;
+		transaction_code char(8);
+		account_balance decimal;
+		transaction_time timestamp;
 
-        output <%- migration.schemaName %>.<%- databaseItemsPrefix %>transaction_result;
+		output <%- migration.schemaName %>.<%- databaseItemsPrefix %>transaction_result;
 
-    BEGIN
-        SELECT <%- migration.schemaName %>.<%- databaseItemsPrefix %>random_string(8) INTO transaction_code;
-        transaction_code = COALESCE(code, transaction_code);
+	BEGIN
+		SELECT <%- migration.schemaName %>.<%- databaseItemsPrefix %>random_string(8) INTO transaction_code;
+		transaction_code = COALESCE(code, transaction_code);
 
-        transaction_time = COALESCE(datetime, now());
-        SELECT <%- migration.schemaName %>.<%- databaseItemsPrefix %>current_period(transaction_time) INTO current_period;
+		transaction_time = COALESCE(datetime, now());
+		SELECT <%- migration.schemaName %>.<%- databaseItemsPrefix %>current_period(transaction_time) INTO current_period;
 
-        SELECT <%- migration.schemaName %>.<%- databaseItemsPrefix %>get_balance(account) INTO account_balance;
+		SELECT <%- migration.schemaName %>.<%- databaseItemsPrefix %>get_balance(account) INTO account_balance;
 
-        insert into <%- migration.schemaName %>.<%- databaseItemsPrefix %>transaction
-            (period, timestamp, code, account_number, amount, balance, description, meta)
-        VALUES
-            (current_period, transaction_time, transaction_code, account, amount, account_balance + amount, description, meta);
+		insert into <%- migration.schemaName %>.<%- databaseItemsPrefix %>transaction
+			(period, timestamp, code, account_number, amount, balance, description, meta)
+		VALUES
+			(current_period, transaction_time, transaction_code, account, amount, account_balance + amount, description, meta);
 
-        output.code = transaction_code;
-        output.balance = account_balance + amount;
+		output.code = transaction_code;
+		output.balance = account_balance + amount;
 
-        return output;
-    end;
+		return output;
+	end;
 
-    $$;
+	$$;
