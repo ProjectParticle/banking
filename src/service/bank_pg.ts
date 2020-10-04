@@ -30,17 +30,6 @@ export class BankPostgres implements BankService {
 		this.connectionPool = connectionPool;
 	}
 
-	private async addTransactionTablePartitionIfNotExists(): Promise<void> {
-
-		// get the method name
-		const getCurrentPeriodMethodName = `${this.databaseConfig.databaseItemsPrefix}current_period`;
-		const createTransactionPeriodMethodName = `${this.databaseConfig.databaseItemsPrefix}create_transaction_period`;
-
-		await this.connectionPool.query(
-			`SELECT * from "${this.databaseConfig.schemaName}".${createTransactionPeriodMethodName}(${getCurrentPeriodMethodName}())`
-		);
-	}
-
 	private async getAccountHistoryViewName(accountNumber: string): Promise<string> {
 
 		// get the method name
@@ -54,7 +43,7 @@ export class BankPostgres implements BankService {
 		return result.rows[0][methodName];
 	}
 
-	async getCurrentBalance(accountNumber: string): Promise<number> {
+	async getAccountBalance(accountNumber: string): Promise<number> {
 
 		// get the method name
 		const methodName = `${this.databaseConfig.databaseItemsPrefix}get_balance`;
@@ -79,8 +68,6 @@ export class BankPostgres implements BankService {
 		meta?: any, // eslint-disable-line @typescript-eslint/no-explicit-any
 
 	): Promise<TransactionResult> {
-
-		await this.addTransactionTablePartitionIfNotExists();
 
 		// get the method name
 		const methodName = `${this.databaseConfig.databaseItemsPrefix}insert_transaction`;
@@ -107,8 +94,6 @@ export class BankPostgres implements BankService {
 		meta?: any, // eslint-disable-line @typescript-eslint/no-explicit-any
 
 	): Promise<Array<TransactionResult>> {
-
-		await this.addTransactionTablePartitionIfNotExists();
 
 		// get the method name
 		const methodName = `${this.databaseConfig.databaseItemsPrefix}transfer`;
@@ -223,11 +208,13 @@ export class BankPostgres implements BankService {
 		// get the method name
 		const methodName = `${this.databaseConfig.databaseItemsPrefix}transaction`;
 
+		// Retrieve a specific record
 		const result = await this.connectionPool.query<TransactionRecord>(
 			`SELECT * FROM "${this.databaseConfig.schemaName}".${methodName} WHERE code=$1 LIMIT 1`,
 			[code]
 		);
 
+		// record not found
 		if (result.rowCount === 0) {
 			throw new ApplicationError({
 				code: 'E_NOT_FOUND',

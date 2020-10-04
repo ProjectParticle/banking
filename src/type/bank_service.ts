@@ -10,7 +10,7 @@ export interface BankService {
 	 * Get an account balance
 	 * @param accountNumber Target account number
 	 */
-	getCurrentBalance(accountNumber: string): Promise<number>;
+	getAccountBalance(accountNumber: string): Promise<number>;
 
 	/**
 	 * Add a new transaction
