@@ -2,6 +2,44 @@
  * Database types
  */
 
+export type TransactionRecord = {
+
+	/**
+	 * Time that transaction has taken place
+	 */
+	timestamp: Date,
+
+	/**
+	 * Unique transaction code
+	 */
+	code: string,
+
+	/**
+	 * Account number
+	 */
+	account_number: string,
+
+	/**
+	 * Transaction amount
+	 */
+	amount: number,
+
+	/**
+	 * Balance after transaction
+	 */
+	balance: number,
+
+	/**
+	 * Human-friendly information about current transaction
+	 */
+	description?: string,
+
+	/**
+	 * Machine-friendly information about current transaction
+	 */
+	meta?: any,
+};
+
 export type Transaction = {
 
 	/**

@@ -7,7 +7,7 @@ import { Pool as PostgresConnectionPool, } from 'pg';
 
 import { BankService } from '../type/bank_service';
 import { DatabaseConfig } from '../type/database';
-import { GetBalanceResult, Transaction, TransactionHistoryOptions, TransactionHistoryResult, TransactionResult } from '../type/database_types';
+import { GetBalanceResult, Transaction, TransactionHistoryOptions, TransactionHistoryResult, TransactionRecord, TransactionResult } from '../type/database_types';
 
 export class BankPostgres implements BankService {
 
@@ -193,7 +193,7 @@ export class BankPostgres implements BankService {
 			transactions: []
 		};
 
-		const result = await this.connectionPool.query<Transaction>(
+		const result = await this.connectionPool.query<TransactionRecord>(
 			sql,
 			params,
 		);
@@ -206,7 +206,7 @@ export class BankPostgres implements BankService {
 		// transform the result
 		output.transactions = result.rows.map(row => ({
 
-			accountNumber: row.accountNumber,
+			accountNumber: row.account_number.trim(),
 			amount: row.amount,
 			balance: row.balance,
 			code: row.code,
@@ -216,5 +216,38 @@ export class BankPostgres implements BankService {
 		}));
 
 		return output;
+	}
+
+	async getTransactionByCode(code: string): Promise<Transaction> {
+
+		// get the method name
+		const methodName = `${this.databaseConfig.databaseItemsPrefix}transaction`;
+
+		const result = await this.connectionPool.query<TransactionRecord>(
+			`SELECT * FROM "${this.databaseConfig.schemaName}".${methodName} WHERE code=$1 LIMIT 1`,
+			[code]
+		);
+
+		if (result.rowCount === 0) {
+			throw new ApplicationError({
+				code: 'E_NOT_FOUND',
+				message: `Transaction with code '${code}' does not exists.`
+			});
+		}
+
+		// assign a short name
+		const transactionRecord = result.rows[0];
+
+		// Transform record to an object
+		// I did this to prevent leaking extra information from database to the clients
+		return {
+			accountNumber: transactionRecord.account_number.trim(),
+			amount: transactionRecord.amount,
+			balance: transactionRecord.balance,
+			code: transactionRecord.code,
+			timestamp: transactionRecord.timestamp,
+			description: transactionRecord.description,
+			meta: transactionRecord.meta,
+		};
 	}
 }

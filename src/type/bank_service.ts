@@ -2,7 +2,7 @@
  * Bank service
  */
 
-import { Transaction, TransactionHistoryOptions, TransactionResult } from './database_types';
+import { Transaction, TransactionHistoryOptions, TransactionHistoryResult, TransactionResult } from './database_types';
 
 export interface BankService {
 
@@ -62,4 +62,10 @@ export interface BankService {
 	 * @param options History options
 	 */
 	getAccountHistory(accountNumber: string, options?: TransactionHistoryOptions): Promise<TransactionHistoryResult>;
+
+	/**
+	 * Retrieve transaction details by it's code
+	 * @param code Transaction code
+	 */
+	getTransactionByCode(code: string): Promise<Transaction>;
 };
